@@ -1,0 +1,43 @@
+stages:
+  - init
+  - plan
+  - apply
+
+# Define a cache to store the .terraform directory between jobs
+cache:
+  paths:
+    - .terraform/
+    - terraform.tfstate
+
+# Install Terraform and initialize the environment
+before_script:
+  - apk add --no-cache curl unzip jq
+  - curl -o terraform.zip https://releases.hashicorp.com/terraform/1.5.3/terraform_1.5.3_linux_amd64.zip
+  - unzip terraform.zip
+  - mv terraform /usr/local/bin/
+  - terraform --version
+
+# Terraform init stage
+terraform_init:
+  stage: init
+  script:
+    - terraform init
+
+# Terraform plan stage
+terraform_plan:
+  stage: plan
+  script:
+    - terraform plan
+  only:
+    - merge_requests
+    - main # Only run on the default branch
+
+# Terraform apply stage
+terraform_apply:
+  stage: apply
+  script:
+    - terraform apply -auto-approve
+  environment:
+    name: production
+  only:
+    - main
