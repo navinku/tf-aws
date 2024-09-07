@@ -14,3 +14,13 @@ ssh -T git@gitlab.com
 Welcome to GitLab, @org-navinku!
 ===========================================
 git clone git@gitlab.com:org-navinku/tf-aws.git
+=================================================
+aws configure
+set accesskey and password in cat ~/.aws/credentials
+[default]
+aws_access_key_id = 
+aws_secret_access_key = 
+region in cat ~/.aws/config
+region = us-east-1
+output = json
+==================================================
