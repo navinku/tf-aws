@@ -36,3 +36,12 @@ deploy:
   environment:
     name: $TF_STATE_NAME
     action: start
+
+cleanup:
+  extends: .terraform:destroy
+  dependencies:
+    - deploy
+  environment:
+    name: $TF_STATE_NAME
+    action: stop
+  when: manual
