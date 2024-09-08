@@ -42,8 +42,7 @@ pipeline {
                     sh """
                     terraform plan -input=false \
                         -out=tfplan \
-                        -var 'version=${params.version}' \
-                        --var-file=environments/default.tfvars
+                        -var 'version=${params.version}'
                     """
                     sh 'terraform show -no-color tfplan > tfplan.txt'
                 }
