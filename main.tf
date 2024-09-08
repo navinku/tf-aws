@@ -1,5 +1,8 @@
+variable "region" {}
+variable "instance_type" {}
+
 provider "aws" {
-  region = "us-east-1" # Specify the AWS region
+  region = var.region # Specify the AWS region
 }
 
 terraform {
@@ -77,7 +80,7 @@ resource "aws_security_group" "tfaws_sg" {
 # EC2 Instance
 resource "aws_instance" "tfaws_instance" {
   ami           = "ami-0182f373e66f89c85" # Replace with the latest Amazon Linux AMI ID for your region
-  instance_type = "t2.micro"
+  instance_type = var.instance_type
 
   subnet_id                   = aws_subnet.tfaws_subnet.id
   vpc_security_group_ids      = [aws_security_group.tfaws_sg.id] # Use the security group ID
