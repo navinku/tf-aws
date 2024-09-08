@@ -7,11 +7,6 @@ pipeline {
         TF_IN_AUTOMATION      = '1'
     }
 
-    parameters {
-        string(name: 'version', defaultValue: '', description: 'Version variable to pass to Terraform')
-        booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -40,9 +35,7 @@ pipeline {
             steps {
                 dir('tf-aws') { // Path where Terraform files are located
                     sh """
-                    terraform plan -input=false \
-                        -out=tfplan \
-                        -var 'version=${params.version}'
+                    terraform plan -input=false -out=tfplan -var 'version=${params.version}'
                     """
                     sh 'terraform show -no-color tfplan > tfplan.txt'
                 }
