@@ -19,9 +19,17 @@ pipeline {
             }
         }
 
+        stage('Debug') {
+            steps {
+                dir('tf-aws') {
+                sh 'ls -la'
+                }
+                }
+        }
+
         stage('Terraform Init') {
             steps {
-                dir('tf-aws') { // Adjust this path if your Terraform files are in a different directory
+                dir('tf-aws') { // Path where Terraform files are located
                     sh 'terraform init -input=false'
                 }
             }
@@ -29,7 +37,7 @@ pipeline {
 
         stage('Select Workspace') {
             steps {
-                dir('tf-aws') { // Adjust this path if your Terraform files are in a different directory
+                dir('tf-aws') { // Path where Terraform files are located
                     sh 'terraform workspace select ${environment} || terraform workspace new ${environment}'
                 }
             }
@@ -37,7 +45,7 @@ pipeline {
 
         stage('Terraform Plan') {
             steps {
-                dir('tf-aws') { // Adjust this path if your Terraform files are in a different directory
+                dir('tf-aws') { // Path where Terraform files are located
                     sh """
                     terraform plan -input=false \
                         -out=tfplan \
@@ -64,12 +72,17 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                dir('tf-aws') { // Adjust this path if your Terraform files are in a different directory
+                dir('tf-aws') { // Path where Terraform files are located
                     sh 'terraform apply -input=false tfplan'
                 }
             }
         }
     }
 
-    
+    post {
+        always {
+            archiveArtifacts artifacts: 'tf-aws/tfplan.txt' // Path to plan file
+            cleanWs() // Clean workspace after execution
+        }
+    }
 }
