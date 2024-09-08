@@ -1,10 +1,6 @@
 pipeline {
-    agent {
-        docker {
-            image 'hashicorp/terraform:1.5.6' // Use the official Terraform Docker image
-            args '-u root' // Run as root to avoid permission issues
-        }
-    }
+    agent any // Use any available Jenkins agent (or specify a label if needed)
+
     environment {
         AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
@@ -22,9 +18,9 @@ pipeline {
         stage('Debug') {
             steps {
                 dir('tf-aws') {
-                sh 'ls -la'
+                    sh 'ls -la' // List files in the repository to confirm the presence of Terraform files
                 }
-                }
+            }
         }
 
         stage('Terraform Init') {
