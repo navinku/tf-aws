@@ -16,14 +16,12 @@ pipeline {
             steps {
                 // Clone the GitHub repository
                 git branch: 'main', url: 'https://github.com/org-navinku/tf-aws.git'
-                sh 'cd tf-aws/'
             }
         }
 
         stage('Terraform Init') {
             steps {
                 dir('tf-aws') { // Adjust this path if your Terraform files are in a different directory
-                    sh 'cd tf-aws/'
                     sh 'terraform init -input=false'
                 }
             }
@@ -73,10 +71,5 @@ pipeline {
         }
     }
 
-    post {
-        always {
-            archiveArtifacts artifacts: 'tf-aws/tfplan.txt' // Adjust this path if your Terraform files are in a different directory
-            cleanWs() // Clean workspace after execution
-        }
-    }
+    
 }
