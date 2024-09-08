@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Clone the GitHub repository
-                Checkout scm
+                checkout scm
             }
         }
 
@@ -34,7 +34,7 @@ pipeline {
         stage('Terraform Plan') {
             steps {
                 dir('tf-aws') { // Path where Terraform files are located
-                    sh 'terraform plan'
+                    sh 'terraform plan -out=tfplan' // Save the plan to a file
                 }
             }
         }
@@ -45,7 +45,7 @@ pipeline {
             }
             steps {
                 script {
-                    def plan = readFile 'tf-aws/tfplan.txt'
+                    def plan = readFile 'tf-aws/tfplan'
                     input message: "Do you want to apply the plan?",
                         parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
                 }
@@ -63,7 +63,7 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'tf-aws/tfplan.txt' // Path to plan file
+            archiveArtifacts artifacts: 'tf-aws/tfplan' // Path to plan file
             cleanWs() // Clean workspace after execution
         }
     }
