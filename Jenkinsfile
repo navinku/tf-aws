@@ -20,18 +20,10 @@ pipeline {
             }
         }
 
-        stage('Change Directory') {
-            steps {
-                // Change to the directory containing your Terraform configurations
-                dir('tf-aws') { // Adjust this path if your Terraform files are in a different directory
-                    sh 'ls -la' // List files to confirm we're in the right directory
-                }
-            }
-        }
-
         stage('Terraform Init') {
             steps {
                 dir('tf-aws') { // Adjust this path if your Terraform files are in a different directory
+                    sh 'cd tf-aws/'
                     sh 'terraform init -input=false'
                 }
             }
