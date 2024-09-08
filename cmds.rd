@@ -56,4 +56,4 @@ Jenkins Config Pipeline
 2. For Public github repo credetials not required
 ==========================================================
 
-<img src="/images.png" alt="Description of image" width="300"/>
+<img src="images.png" alt="Description of image" width="300"/>
