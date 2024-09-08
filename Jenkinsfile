@@ -1,74 +1,55 @@
 pipeline {
-    agent any
-
-    environment {
-        // Define environment variables, for example, Terraform state name
-        TF_STATE_NAME = 'your-terraform-state'
+    agent {
+        docker {
+            image 'hashicorp/terraform:1.5.6' // Use a specific Terraform version or the latest
+            args '-u root'  // Run as root to install additional dependencies if needed
+        }
     }
-
+    environment {
+        TF_VAR_aws_access_key = credentials('AWS_ACCESS_KEY_ID')
+        TF_VAR_aws_secret_key = credentials('AWS_SECRET_ACCESS_KEY')
+    }
     stages {
-        stage('fmt') {
+        stage('Terraform Fmt') {
             steps {
-                // Format Terraform code
                 sh 'terraform fmt -check'
             }
         }
-
-        stage('validate') {
+        stage('Terraform Validate') {
             steps {
-                // Validate the Terraform configuration
                 sh 'terraform validate'
             }
         }
-
-        stage('build') {
+        stage('Terraform Init') {
             steps {
-                // Initialize Terraform and prepare infrastructure
                 sh 'terraform init'
-                sh 'terraform plan -out=tfplan'
-            }
-            environment {
-                // Example: Terraform backend configuration based on environment
-                TF_WORKSPACE = "${env.TF_STATE_NAME}"
             }
         }
-
-        stage('deploy') {
+        stage('Terraform Plan') {
             steps {
-                // Apply the Terraform plan to deploy the infrastructure
-                sh 'terraform apply tfplan'
-            }
-            environment {
-                // Example: Use a specific Terraform workspace
-                TF_WORKSPACE = "${env.TF_STATE_NAME}"
+                sh 'terraform plan -out=plan.out'
             }
         }
-
-        stage('cleanup') {
+        stage('Terraform Apply') {
             when {
-                // Run this stage only when triggered manually
-                expression { return env.BRANCH_NAME == 'main' }
+                branch 'main'
             }
             steps {
-                // Destroy the Terraform-managed infrastructure
-                input message: "Do you want to destroy the infrastructure?", ok: "Yes"
+                sh 'terraform apply -auto-approve plan.out'
+            }
+        }
+        stage('Cleanup') {
+            when {
+                expression { params.CLEANUP == true }
+            }
+            steps {
                 sh 'terraform destroy -auto-approve'
             }
         }
     }
-
     post {
         always {
-            // Clean up workspace after pipeline execution
-            cleanWs()
-        }
-
-        success {
-            echo 'Pipeline completed successfully!'
-        }
-
-        failure {
-            echo 'Pipeline failed!'
+            cleanWs() // Clean workspace after build
         }
     }
 }
