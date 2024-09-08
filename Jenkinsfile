@@ -1,33 +1,30 @@
 pipeline {
-    agent any // Use any available Jenkins agent (or specify a label if needed)
-
-    environment {
-        AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
-        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
-    }
+    agent any
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/org-navinku/tf-aws.git'
+                checkout scm
             }
         }
-        stage('Terraform init') {
+    
+        stage ("terraform init") {
             steps {
-                sh 'terraform init'
+                sh ("terraform init -reconfigure") 
             }
         }
-        stage('Terraform apply') {
+        
+        stage ("plan") {
             steps {
-                sh 'terraform apply --auto-approve'
+                sh ('terraform plan') 
             }
         }
-    }
 
-    post {
-        always {
-            archiveArtifacts artifacts: 'tf-aws/tfplan' // Path to plan file
-            cleanWs() // Clean workspace after execution
+        stage (" Action") {
+            steps {
+                echo "Terraform action is --> ${action}"
+                sh ('terraform ${action} --auto-approve') 
+           }
         }
     }
 }
