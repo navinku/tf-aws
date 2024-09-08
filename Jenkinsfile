@@ -1,8 +1,8 @@
 pipeline {
     agent {
         docker {
-            image 'hashicorp/terraform:1.5.6' // Use a specific Terraform version or the latest
-            args '-u root'  // Run as root to install additional dependencies if needed
+            image 'hashicorp/terraform:1.5.6' // Use the Terraform Docker image
+            args '-u root'  // Use root to install additional dependencies if needed
         }
     }
     environment {

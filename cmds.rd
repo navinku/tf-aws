@@ -35,3 +35,5 @@ sudo apt-get install jenkins
 
 http://IP:8080/
 ======================================================
+sudo docker --version
+Docker version 24.0.7, build 24.0.7-0ubuntu4.1
