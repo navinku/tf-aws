@@ -16,6 +16,7 @@ pipeline {
             steps {
                 // Clone the GitHub repository
                 git branch: 'main', url: 'https://github.com/org-navinku/tf-aws.git'
+                sh 'cd tf-aws/'
             }
         }
 
