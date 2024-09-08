@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Clone the GitHub repository
-                git branch: 'main', url: 'https://github.com/org-navinku/tf-aws.git'
+                Checkout scm
             }
         }
 
@@ -26,7 +26,7 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 dir('tf-aws') { // Path where Terraform files are located
-                    sh 'terraform init -input=false'
+                    sh 'terraform init -reconfigure'
                 }
             }
         }
@@ -34,10 +34,7 @@ pipeline {
         stage('Terraform Plan') {
             steps {
                 dir('tf-aws') { // Path where Terraform files are located
-                    sh """
-                    terraform plan -input=false -out=tfplan -var 'version=${params.version}'
-                    """
-                    sh 'terraform show -no-color tfplan > tfplan.txt'
+                    sh 'terraform plan'
                 }
             }
         }
