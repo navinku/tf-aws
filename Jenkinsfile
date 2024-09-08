@@ -1,55 +1,72 @@
 pipeline {
-    agent {
-        docker {
-            image 'hashicorp/terraform:1.5.6' // Use the Terraform Docker image
-            args '-u root'  // Use root to install additional dependencies if needed
-        }
+    agent any
+
+    parameters {
+        string(name: 'environment', defaultValue: 'default', description: 'Workspace/environment file to use for deployment')
+        string(name: 'version', defaultValue: '', description: 'Version variable to pass to Terraform')
+        booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
     }
+    
     environment {
-        TF_VAR_aws_access_key = credentials('AWS_ACCESS_KEY_ID')
-        TF_VAR_aws_secret_key = credentials('AWS_SECRET_ACCESS_KEY')
+        AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+        TF_IN_AUTOMATION      = '1'
     }
+
     stages {
-        stage('Terraform Fmt') {
-            steps {
-                sh 'terraform fmt -check'
-            }
-        }
-        stage('Terraform Validate') {
-            steps {
-                sh 'terraform validate'
-            }
-        }
         stage('Terraform Init') {
             steps {
-                sh 'terraform init'
+                script {
+                    currentBuild.displayName = params.version ?: 'No Version Specified'
+                }
+                sh 'terraform init -input=false'
             }
         }
+
+        stage('Select Workspace') {
+            steps {
+                script {
+                    sh 'terraform workspace select ${environment} || terraform workspace new ${environment}'
+                }
+            }
+        }
+
         stage('Terraform Plan') {
             steps {
-                sh 'terraform plan -out=plan.out'
+                sh """
+                terraform plan -input=false \
+                    -out=tfplan \
+                    -var 'version=${params.version}' \
+                    --var-file=environments/${params.environment}.tfvars
+                """
+                sh 'terraform show -no-color tfplan > tfplan.txt'
             }
         }
+
+        stage('Approval') {
+            when {
+                not { equals expected: true, actual: params.autoApprove }
+            }
+            steps {
+                script {
+                    def plan = readFile 'tfplan.txt'
+                    input message: "Do you want to apply the plan?",
+                        parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
+                }
+            }
+        }
+
         stage('Terraform Apply') {
-            when {
-                branch 'main'
-            }
             steps {
-                sh 'terraform apply -auto-approve plan.out'
-            }
-        }
-        stage('Cleanup') {
-            when {
-                expression { params.CLEANUP == true }
-            }
-            steps {
-                sh 'terraform destroy -auto-approve'
+                sh 'terraform apply -input=false tfplan'
             }
         }
     }
+
     post {
         always {
-            cleanWs() // Clean workspace after build
+            archiveArtifacts artifacts: 'tfplan.txt'
+            cleanWs() // Clean workspace after execution
         }
     }
 }
