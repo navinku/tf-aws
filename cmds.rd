@@ -44,7 +44,7 @@ sudo apt-get update
 sudo apt-get install terraform -y
 terraform --version
 ========================================================
-Create IAM Role S3 and EC2
+Create IAM Role S3 and EC2 and attach role to jenkins ec2
 =========================================================================
 Jenkins Config Pipeline
 1. This project is parameterized
@@ -53,3 +53,5 @@ Jenkins Config Pipeline
         plan
         apply
         destroy
+2. For Public github repo credetials not required
+==========================================================

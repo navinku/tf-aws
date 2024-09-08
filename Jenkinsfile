@@ -14,12 +14,6 @@ pipeline {
             }
         }
         
-        stage ("plan") {
-            steps {
-                sh ('terraform plan') 
-            }
-        }
-
         stage (" Action") {
             steps {
                 echo "Terraform action is --> ${action}"
