@@ -1,12 +1,10 @@
 pipeline {
-    agent any
-
-    parameters {
-        string(name: 'environment', defaultValue: 'default', description: 'Workspace/environment file to use for deployment')
-        string(name: 'version', defaultValue: '', description: 'Version variable to pass to Terraform')
-        booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
+    agent {
+        docker {
+            image 'hashicorp/terraform:1.5.6' // Use the official Terraform Docker image
+            args '-u root' // Run as root to avoid permission issues
+        }
     }
-    
     environment {
         AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
         AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
@@ -14,18 +12,27 @@ pipeline {
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                // Clone the GitHub repository
+                git branch: 'main', url: 'https://github.com/org-navinku/tf-aws.git'
+            }
+        }
+
         stage('Terraform Init') {
             steps {
                 script {
                     currentBuild.displayName = params.version ?: 'No Version Specified'
                 }
-                sh 'terraform init -input=false'
+                dir('terraform') { // Adjust this path if your Terraform files are in a different directory
+                    sh 'terraform init -input=false'
+                }
             }
         }
 
         stage('Select Workspace') {
             steps {
-                script {
+                dir('terraform') { // Adjust this path if your Terraform files are in a different directory
                     sh 'terraform workspace select ${environment} || terraform workspace new ${environment}'
                 }
             }
@@ -33,13 +40,15 @@ pipeline {
 
         stage('Terraform Plan') {
             steps {
-                sh """
-                terraform plan -input=false \
-                    -out=tfplan \
-                    -var 'version=${params.version}' \
-                    --var-file=environments/${params.environment}.tfvars
-                """
-                sh 'terraform show -no-color tfplan > tfplan.txt'
+                dir('terraform') { // Adjust this path if your Terraform files are in a different directory
+                    sh """
+                    terraform plan -input=false \
+                        -out=tfplan \
+                        -var 'version=${params.version}' \
+                        --var-file=environments/${params.environment}.tfvars
+                    """
+                    sh 'terraform show -no-color tfplan > tfplan.txt'
+                }
             }
         }
 
@@ -49,7 +58,7 @@ pipeline {
             }
             steps {
                 script {
-                    def plan = readFile 'tfplan.txt'
+                    def plan = readFile 'terraform/tfplan.txt'
                     input message: "Do you want to apply the plan?",
                         parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
                 }
@@ -58,14 +67,16 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                sh 'terraform apply -input=false tfplan'
+                dir('terraform') { // Adjust this path if your Terraform files are in a different directory
+                    sh 'terraform apply -input=false tfplan'
+                }
             }
         }
     }
 
     post {
         always {
-            archiveArtifacts artifacts: 'tfplan.txt'
+            archiveArtifacts artifacts: 'terraform/tfplan.txt' // Adjust this path if your Terraform files are in a different directory
             cleanWs() // Clean workspace after execution
         }
     }
