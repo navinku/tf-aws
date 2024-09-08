@@ -19,12 +19,18 @@ pipeline {
             }
         }
 
+        stage('Change Directory') {
+            steps {
+                // Change to the directory containing your Terraform configurations
+                dir('tf-aws') { // Adjust this path if your Terraform files are in a different directory
+                    sh 'ls -la' // List files to confirm we're in the right directory
+                }
+            }
+        }
+
         stage('Terraform Init') {
             steps {
-                script {
-                    currentBuild.displayName = params.version ?: 'No Version Specified'
-                }
-                dir('terraform') { // Adjust this path if your Terraform files are in a different directory
+                dir('tf-aws') { // Adjust this path if your Terraform files are in a different directory
                     sh 'terraform init -input=false'
                 }
             }
@@ -32,7 +38,7 @@ pipeline {
 
         stage('Select Workspace') {
             steps {
-                dir('terraform') { // Adjust this path if your Terraform files are in a different directory
+                dir('tf-aws') { // Adjust this path if your Terraform files are in a different directory
                     sh 'terraform workspace select ${environment} || terraform workspace new ${environment}'
                 }
             }
@@ -40,7 +46,7 @@ pipeline {
 
         stage('Terraform Plan') {
             steps {
-                dir('terraform') { // Adjust this path if your Terraform files are in a different directory
+                dir('tf-aws') { // Adjust this path if your Terraform files are in a different directory
                     sh """
                     terraform plan -input=false \
                         -out=tfplan \
@@ -58,7 +64,7 @@ pipeline {
             }
             steps {
                 script {
-                    def plan = readFile 'terraform/tfplan.txt'
+                    def plan = readFile 'tf-aws/tfplan.txt'
                     input message: "Do you want to apply the plan?",
                         parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
                 }
@@ -67,7 +73,7 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                dir('terraform') { // Adjust this path if your Terraform files are in a different directory
+                dir('tf-aws') { // Adjust this path if your Terraform files are in a different directory
                     sh 'terraform apply -input=false tfplan'
                 }
             }
@@ -76,7 +82,7 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'terraform/tfplan.txt' // Adjust this path if your Terraform files are in a different directory
+            archiveArtifacts artifacts: 'tf-aws/tfplan.txt' // Adjust this path if your Terraform files are in a different directory
             cleanWs() // Clean workspace after execution
         }
     }
